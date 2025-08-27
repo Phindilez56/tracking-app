@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issues Tracker | Sign Up</title>
+
+    <!-- styling -->
+    <link rel="stylesheet" type="text/css" href="../css/index.css" />
+    <!-- scripting -->
+    <script type="text/javascript" src="../js/StorageApi.js"></script>
+    <script type="text/javascript" src="../js/FormBuilder.js"></script>
+    <script type="text/javascript" src="../js/PasswordHandler.js"></script>
+
+</head>
+
+<body>
+    <header>
+        <div class="header-container">
+            <div class="header-content">
+                <div class="app-name">
+                    <h4>Issues Tracker</h4>
+                </div>
+                <div class="app-nav-menu">
+                    <a href="./signin.html">Sign In</a>
+                    <a class="link-active" href="./signup.html">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </header>
+    <section>
+        <div class="main-container">
+            <div class="main-content">
+                <div class="main-content-container">
+                    <div class="welcome-message">
+                        <h4>Let's Sign you Up</h4>
+                        <p>We will keep your data on local storage</p>
+                        <p>So you can always login until the day you remove it</p>
+                    </div>
+                </div>
+                <div class="sign-in-form sign-up-forms">
+                    <p class="status-report"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- scripting -->
+    <script type="text/javascript">
+        const FormProps = [{
+            type: "text",
+            id: "username",
+            name: "Username",
+            placeholder: "Enter your username"
+        }, {
+            type: "password",
+            id: "password",
+            name: "Password",
+            placeholder: "Enter your password"
+        }, {
+            type: "email",
+            id: "email",
+            name: "Email",
+            placeholder: "Enter your valid email address"
+        }, {
+            type: "text",
+            id: "firstname",
+            name: "FirstName",
+            placeholder: "Enter your first name"
+        }, {
+            type: "text",
+            id: "lastname",
+            name: "LastName",
+            placeholder: "Enter your last name"
+        }];
+
+        const Storage = new StorageApi();
+        const PasswordHandling = new PasswordHandler();
+        const AppFormBuilder = new FormBuilder("sign-in-form");
+
+        window.onload = function () {
+            AppFormBuilder.buildForm(FormProps);
+        }
+
+        AppFormBuilder.submitFormData = async function (report) {
+            const isFormValid = AppFormBuilder.validateForm();
+            const isEmailValid = AppFormBuilder.validateEmail();
+            const isPasswordValid = AppFormBuilder.validatePassword();
+            const isUsernameValid = AppFormBuilder.validateUsername();
+
+            if (!isFormValid.status) {
+                responseHandle(isFormValid.message);
+            } else if (!isEmailValid.status) {
+                responseHandle(isEmailValid.message);
+            } else if (!isPasswordValid.status) {
+                responseHandle(isPasswordValid.message);
+            } else if (!isUsernameValid.status) {
+                responseHandle(isUsernameValid.message);
+            } else {
+                const userData = AppFormBuilder.buildFormData();
+
+                PasswordHandling.hashPassword(userData.Password).then((response) => {
+                    userData.Password = response;
+                    Storage.saveData("users", userData);
+                    window.location.assign("/");
+                });
+            }
+        }
+
+        function responseHandle(message) {
+            document.querySelector(".status-report").textContent = message;
+        }
+    </script>
+</body>
+
+</html>

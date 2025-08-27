@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issues Tracker | Welcome</title>
+
+    <!-- styling -->
+    <link rel="stylesheet" type="text/css" href="./css/index.css" />
+
+    <!-- scripting -->
+    <script type="text/javascript" src="./js/StorageApi.js"></script>
+
+</head>
+
+<body>
+    <header>
+        <div class="header-container">
+            <div class="header-content">
+                <div class="app-name">
+                    <h4>Issues Tracker</h4>
+                </div>
+                <div class="app-nav-menu">
+                    <a href="./auth/signin.html">Sign In</a>
+                    <a href="./auth/signup.html">Sign Up</a>
+                    <a hidden href="#" onclick="deleteAcc(event)">Delete Account</a>
+                    <a hidden href="#" onclick="signout(event)">Sign Out</a>
+                </div>
+            </div>
+        </div>
+    </header>
+    <section>
+        <div class="main-container">
+            <div class="main-content">
+                <div class="main-content-container">
+                    <div class="welcome-message">
+                        <h4>Below are the existing issues you have created.</h4>
+                        <p>Modify their statuses, delete, filter as you see fit</p>
+                        <p>Its time to track issues, got for it.</p>
+                    </div>
+                </div>
+                <div class="user-details">
+                    <h4></h4>
+                </div>
+                <br />
+                <div class="general-contents">
+                    <div class="registered-users">
+                        <div class="controls">
+                            <fieldset class="form-group">
+                                <!-- <label>Find Issues</label> -->
+                                <input type="text" class="form-control" placeholder="Find issues . . . " name="Issue"
+                                    id="Issue" />
+                            </fieldset>
+                            <div onclick="createIssue()" class="btn btn-success">
+                                <span>Create Issue</span>
+                            </div>
+                        </div>
+                        <br />
+                        <h4>Issues(4)</h4>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script type="text/javascript">
+        const issuesList = [];
+        const Storage = new StorageApi();
+
+        window.onload = async function () {
+            await checkIfUserIsLoggedIn();
+
+            const issues = Storage.getIssuesList();
+
+            issuesList = JSON.parse(issues);
+        }
+
+        function signout(event) {
+            event.preventDefault();
+            window.location.assign("/auth/signin.html");
+        }
+
+        function deleteAcc(event) {
+            event.preventDefault();
+            const isDeleted = Storage.removeData("currentUser");
+
+            window.location.assign("/auth/signin.html");
+        }
+
+        async function checkIfUserIsLoggedIn() {
+            const currentUser = Storage.getData("currentUser");
+
+            if (currentUser !== null) {
+                const isLoggedIn = JSON.parse(currentUser);
+
+                Array.from(document.querySelectorAll(".app-nav-menu a")).forEach((anchor, index) => {
+                    if (index <= 1) {
+                        anchor.setAttribute("hidden", true);
+                    } else {
+                        anchor.removeAttribute("hidden", true);
+                    }
+                });
+
+                document.querySelector(".registered-users h4").textContent = issuesList?.length + " Issues";
+
+                buildIssuesTable(issuesList);
+
+                document.querySelector(".user-details h4").textContent = "Hello, " + isLoggedIn.FirstName + " " + isLoggedIn.LastName;
+
+
+            } else {
+                window.location.assign("/auth/signin.html");
+            }
+        }
+
+        function createIssue() {
+            window.location.assign("create-issue.html");
+        }
+        function buildIssuesTable(list) {
+            list.forEach((row) => {
+                document.querySelector("tbody").innerHTML += `<tr>
+                        <td>${row.Username}</td>
+                        <td>${row.Email}</td>
+                        <td>${row.FirstName}</td>
+                        <td>${row.LastName}</td>
+                        <td><div class='app-btn'>Delete</div></td>
+                    </tr>`;
+            });
+        }
+    </script>
+</body>
+
+</html>
