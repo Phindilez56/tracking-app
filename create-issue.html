@@ -4,14 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Issues Tracker | Manage Issues</title>
+    <title>Tracking App | Manage Issues</title>
 
     <!-- styling -->
     <link rel="stylesheet" type="text/css" href="./css/index.css" />
-
-    <!-- scripting -->
-    <script type="text/javascript" src="./js/StorageApi.js"></script>
-
 </head>
 
 <body>
@@ -19,13 +15,10 @@
         <div class="header-container">
             <div class="header-content">
                 <div class="app-name">
-                    <h4>Issues Tracker</h4>
+                    <h4>Tracking App</h4>
                 </div>
                 <div class="app-nav-menu">
-                    <a href="./auth/signin.html">Sign In</a>
-                    <a href="./auth/signup.html">Sign Up</a>
-                    <a hidden href="/">Home</a>
-                    <a hidden href="#" onclick="signout(event)">Sign Out</a>
+                    <a href="/">Home</a>
                 </div>
             </div>
         </div>
@@ -35,26 +28,14 @@
             <div class="main-content">
                 <div class="main-content-container">
                     <div class="welcome-message">
-                        <h4>Manage Issues.</h4>
+                        <h4>Issues Management Window.</h4>
                     </div>
-                </div>
-                <div class="user-details">
-                    <h4></h4>
                 </div>
                 <br />
                 <div class="general-contents">
-                    <div class="registered-users">
+                    <div class="registered-users form-area">
                         <div class="issues-form">
-                            <fieldset class="form-group">
-                                <label>Issue Name</label>
-                                <input type="text" class="form-control" placeholder="Find issues . . . " name="Issue"
-                                    id="Issue" />
-                            </fieldset>
-                            <fieldset class="form-group">
-                                <label>Issue Description</label>
-                                <textarea class="form-control" name="Description" id="Description"
-                                    placeholder="Describe the issue here"></textarea>
-                            </fieldset>
+                            <p class="status-report"></p>
                             <fieldset class="form-group">
                                 <label>Issue Priority</label>
                                 <select class="form-control" name="Priority" id="Priority">
@@ -68,7 +49,7 @@
                             </fieldset>
                             <fieldset class="form-group">
                                 <label>Issue Status</label>
-                                <select class="form-control" name="Priority" id="Priority">
+                                <select class="form-control" name="Status" id="Status">
                                     <optgroup>
                                         <option value="">Select Issue Status</option>
                                         <option value="Active">Active</option>
@@ -76,24 +57,53 @@
                                     </optgroup>
                                 </select>
                             </fieldset>
+
+                            <fieldset class="form-group">
+                                <label>Issue Name</label>
+                                <input type="text" class="form-control" placeholder="Issue name " name="Issue"
+                                    id="Issue" />
+                            </fieldset>
+                            <fieldset class="form-group">
+                                <label>Issue Description</label>
+                                <textarea class="form-control" name="Description" id="Description"
+                                    placeholder="Describe the issue here"></textarea>
+                            </fieldset>
+
                             <br />
-                            <div onclick="createIssue()" class="btn btn-success">
+                            <div onclick="createIssue()" class="btn btn-success create">
                                 <span>Create Issue</span>
+                            </div>
+                            <div class="btns-editing">
+                                <div onclick="updateEntry()" class="btn btn-success update">
+                                    <span>Update Issue</span>
+                                </div>
+                                <div onclick="cancelEditing()" class="btn btn-warning cancel">
+                                    <span>Cancel Editing</span>
+                                </div>
                             </div>
                         </div>
                         <br />
-                        <h4>Issues(4)</h4>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                        <div class="controls">
+                            <fieldset class="form-group">
+                                <input onkeyup="filterList(event)" type="text" class="form-control"
+                                    placeholder="Filter issues . . . " name="Issue" id="Issue" />
+                            </fieldset>
+                        </div>
+                        <h4></h4>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Priority</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -101,69 +111,203 @@
     </section>
 
     <script type="text/javascript">
-        const issuesList = [];
-        const Storage = new StorageApi();
+        let EditingIndex;
+        let ItemsList = [];
 
         window.onload = async function () {
-            await checkIfUserIsLoggedIn();
+            const issue = sessionStorage.getItem("issue");
+            const issues = sessionStorage.getItem("issues");
 
-            const issues = Storage.getIssuesList();
 
-            issuesList = JSON.parse(issues);
-        }
+            if (issues !== null) {
+                ItemsList = JSON.parse(issues);
+                buildIssuesTable(ItemsList);
 
-        function signout(event) {
-            event.preventDefault();
-            window.location.assign("/auth/signin.html");
-        }
+                document.querySelector(".form-area h4").textContent = `Issues (${ItemsList.length})`;
+            }
 
-        function deleteAcc(event) {
-            event.preventDefault();
-            const isDeleted = Storage.removeData("currentUser");
+            if (issue != null) {
+                const formFields = Array.from(document.querySelectorAll(".issues-form input, .issues-form select, .issues-form textarea"));
 
-            window.location.assign("/auth/signin.html");
-        }
+                EditingIndex = JSON.parse(issue);
 
-        async function checkIfUserIsLoggedIn() {
-            const currentUser = Storage.getData("currentUser");
+                document.querySelector(".create").style.display = "none";
+                document.querySelector(".btns-editing").style.display = "flex";
 
-            if (currentUser !== null) {
-                const isLoggedIn = JSON.parse(currentUser);
+                formFields.forEach((item, index) => {
+                    switch (item.name) {
+                        case 'Status':
+                            item.value = ItemsList[EditingIndex].Status;
+                            break;
+                        case 'Priority':
+                            item.value = ItemsList[EditingIndex].Priority;
+                            break;
+                        case 'Issue':
+                            item.value = ItemsList[EditingIndex].Issue;
+                            break;
+                        case 'Date':
+                            item.value = new Date();
+                            break;
 
-                Array.from(document.querySelectorAll(".app-nav-menu a")).forEach((anchor, index) => {
-                    if (index <= 1) {
-                        anchor.setAttribute("hidden", true);
-                    } else {
-                        anchor.removeAttribute("hidden", true);
+                        default:
+                            item.value = ItemsList[EditingIndex].Description;
+                            break;
                     }
                 });
-
-                document.querySelector(".registered-users h4").textContent = issuesList?.length + " Issues";
-
-                buildIssuesTable(issuesList);
-
-                document.querySelector(".user-details h4").textContent = "Create new Issue";
-
-
-            } else {
-                window.location.assign("/auth/signin.html");
             }
         }
 
         function buildIssuesTable(list) {
-            list.forEach((row) => {
-                document.querySelector("tbody").innerHTML += `<tr>
-                        <td>${row.Username}</td>
-                        <td>${row.Email}</td>
-                        <td>${row.FirstName}</td>
-                        <td>${row.LastName}</td>
-                        <td><div class='app-btn'>Delete</div></td>
+            document.querySelector("tbody").innerHTML = "";
+
+            list.forEach((row, index) => {
+                document.querySelector("tbody").innerHTML += `<tr id=${index + 1}>
+                        <td>${row.Issue}</td>
+                        <td>${row.Date}</td>
+                        <td>${row.Status}</td>
+                        <td>${row.Priority}</td>
+                        <td><div class='btn btn-success'><span>Edit</span></div>
+                            <div class='btn btn-danger'><span>Delete</span></div>
+                            </td>
                     </tr>`;
+            });
+
+            Array.from(document.querySelectorAll("tbody .btn")).forEach((btn) => {
+                if (btn.classList.contains("btn-success"))
+                    btn.addEventListener("click", editIssue, false);
+
+                if (btn.classList.contains("btn-danger"))
+                    btn.addEventListener("click", deleteIssue, false);
             });
         }
 
-        function createIssue() {
+        function cancelEditing() {
+            const formFields = Array.from(document.querySelectorAll(".issues-form input, .issues-form select, .issues-form textarea"));
 
+            formFields.forEach((input) => {
+                input.value = "";
+            });
+
+            document.querySelector(".create").style.display = "initial";
+            document.querySelector(".btns-editing").style.display = "none";
+        }
+
+        function filterList(event) {
+            const filedValue = event.target.value;
+
+            if (filedValue.length >= 3) {
+                const newList = ItemsList.filter((item) => {
+                    return (item.Issue.toLowerCase().match(filedValue.toLowerCase()) ||
+                        item.Status.toLowerCase().match(filedValue.toLowerCase()) ||
+                        item.Priority.toLowerCase().match(filedValue.toLowerCase()) ||
+                        item.Date.toString().toLowerCase().match(filedValue.toLowerCase()));
+                });
+
+                buildIssuesTable(newList);
+                document.querySelector(".form-area h4").textContent = `Issues (${newList.length})`;
+            } else {
+                buildIssuesTable(ItemsList);
+                document.querySelector(".form-area h4").textContent = `Issues (${ItemsList.length})`;
+            }
+        }
+
+        function updateEntry() {
+            const formData = {};
+            const formFields = Array.from(document.querySelectorAll(".issues-form input, .issues-form select, .issues-form textarea"));
+
+            formFields.forEach((input) => {
+                formData[input.name] = input.value;
+            });
+
+            ItemsList[EditingIndex] = formData;
+
+            buildIssuesTable(ItemsList);
+            sessionStorage.setItem("issues", JSON.stringify(ItemsList));
+        }
+
+        function editIssue(event) {
+            document.querySelector(".create").style.display = "none";
+            document.querySelector(".btns-editing").style.display = "flex";
+
+            const btnParent = getParentElement(event.target);
+            const btnIndex = parseInt(btnParent.id) - 1;
+
+            EditingIndex = btnIndex;
+
+            const formFields = Array.from(document.querySelectorAll(".issues-form input, .issues-form select, .issues-form textarea"));
+
+            formFields.forEach((item, index) => {
+                switch (item.name) {
+                    case 'Status':
+                        item.value = ItemsList[btnIndex].Status;
+                        break;
+                    case 'Priority':
+                        item.value = ItemsList[btnIndex].Priority;
+                        break;
+                    case 'Issue':
+                        item.value = ItemsList[btnIndex].Issue;
+                        break;
+                    case 'Date':
+                        item.value = new Date();
+                        break;
+
+                    default:
+                        item.value = ItemsList[btnIndex].Description;
+                        break;
+                }
+            });
+        }
+
+        function getParentElement(element) {
+            while (element.localName !== "tr") {
+                element = element.parentElement;
+            }
+
+            return element;
+        }
+
+        function deleteIssue(event) {
+            const btnParent = getParentElement(event.target);
+            const btnIndex = parseInt(btnParent.id) - 1;
+
+            ItemsList.splice(btnIndex, 1);
+
+            buildIssuesTable(ItemsList);
+            sessionStorage.setItem("issues", JSON.stringify(ItemsList));
+
+            document.querySelector(".form-area h4").textContent = `Issues (${ItemsList.length})`;
+        }
+
+        function createIssue() {
+            const formFields = Array.from(document.querySelectorAll(".issues-form input, .issues-form select, .issues-form textarea"));
+            const isFormValid = formFields.filter((input) => {
+                return (input.value == "");
+            });
+
+            if (isFormValid.length > 0) {
+                document.querySelector(".status-report").textContent = "Please fill in all required fields.";
+            } else {
+                document.querySelector(".status-report").textContent = "";
+                const formData = {};
+
+                formFields.forEach((input) => {
+                    formData[input.name] = input.value;
+                });
+
+                formData.Date = new Date();
+
+                ItemsList.push(formData);
+                sessionStorage.setItem("issues", JSON.stringify(ItemsList));
+
+                document.querySelector(".form-area h4").textContent = `Issues (${ItemsList.length})`;
+
+                formFields.forEach((input) => {
+                    input.value = "";
+                });
+
+                buildIssuesTable(ItemsList);
+
+            }
         }
     </script>
 </body>
